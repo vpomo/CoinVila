@@ -96,7 +96,6 @@ contract PoSTokenStandard {
 
 contract CoinVila is ERC20,PoSTokenStandard,Ownable {
     using SafeMath for uint256;
-    //Accelerator - Changed name of contract
     string public name = "CoinVila";
     string public symbol = "VILA";
     uint public decimals = 18;
@@ -109,8 +108,21 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
     uint public maxMintProofOfStake = 10**17; // default 10% annual interest
 
     uint public totalSupply;
-    uint public maxTotalSupply;
-    uint public totalInitialSupply;
+    uint public maxTotalSupply = 27 * (10**6) * (10**uint256(decimals)); // 7 Mil.;
+    uint public totalInitialSupply = 250 * (10**3) * (10**uint256(decimals));
+    uint256 public INITIAL_SUPPLY = 250 * (10**3) * (10 ** uint256(decimals));
+
+    address public addressFundTeam = 0x457b4c64F4Fe2854CD2039d4595AA130FAF109Fe;
+    address public addressFundAirdrop = 0xC16994e63E1A24511A5a1f7BA842f3738fa003f5;
+    address public addressFundBounty = 0xbCCCd34da9b5E73036AdEBEd25460F0c29f16EC9;
+    address public addressFundPlatform = 0x4853E66582Bd4c0787785Fc31584a14CB43c5DC3;
+    address public addressFundHolder = 0x771582104379Bb5C6AFf39023843F19aF046ADE8;
+
+    uint256 public amountFundTeam = 25 * (10**3) * (10**uint256(decimals));
+    uint256 public amountFundAirdrop = 130 * (10**3) * (10**uint256(decimals));
+    uint256 public amountFundBounty = 20 * (10**3) * (10**uint256(decimals));
+    uint256 public amountFundPlatform = 50 * (10**3) * (10**uint256(decimals));
+    uint256 public amountFundHolder = 25 * (10**3) * (10**uint256(decimals));
 
     struct transferInStruct{
         uint128 amount;
@@ -144,37 +156,26 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
     }
 
     function CoinVilaStart() private {
-        address recipient;
-        uint value;
         uint64 _now = uint64(now);
-        //kill start if this has already been ran
-        require((maxTotalSupply <= 0));
-
-        maxTotalSupply = 7 * 10**6 * 10**decimals; // 7 Mil.
-
-        //Accelerator - Modified initial supply to 250k
-        totalInitialSupply = 200 * 10**3 * 10**decimals; // 250K
+        totalSupply = totalInitialSupply;
 
         chainStartTime = now;
         chainStartBlockNumber = block.number;
 
-/*
-        //Free Airdrop to Affiliates and Website Visitors - 200K
-        recipient = 0xFd3fBD60f3d394374d692C0cb7E3B90f064009b0;
-        value = 2 * (10**23);
-        //run
-        balances[recipient] = value;
-        transferIns[recipient].push(transferInStruct(uint128(value),_now));
+        balances[addressFundTeam] = amountFundTeam;
+        transferIns[addressFundTeam].push(transferInStruct(uint128(amountFundTeam),_now));
 
-        //Core development Team - 50K
-        recipient = 0x347fdeCA4F170E59CE54AE63D2a841BCb39d3062;
-        value = 5 * (10**22);
-        //run
-        balances[recipient] = value;
-        transferIns[recipient].push(transferInStruct(uint128(value),_now));
-*/
+        balances[addressFundHolder] = amountFundHolder;
+        transferIns[addressFundHolder].push(transferInStruct(uint128(amountFundHolder),_now));
 
-        totalSupply = totalInitialSupply;
+        balances[addressFundAirdrop] = amountFundAirdrop;
+        transferIns[addressFundAirdrop].push(transferInStruct(uint128(amountFundAirdrop),_now));
+
+        balances[addressFundBounty] = amountFundBounty;
+        transferIns[addressFundBounty].push(transferInStruct(uint128(amountFundBounty),_now));
+
+        balances[addressFundPlatform] = amountFundPlatform;
+        transferIns[addressFundPlatform].push(transferInStruct(uint128(amountFundPlatform),_now));
     }
 
     function transfer(address _to, uint256 _value) onlyPayloadSize(2 * 32) public returns (bool) {
@@ -224,6 +225,7 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
     function allowance(address _owner, address _spender) public returns (uint256 remaining) {
         return allowed[_owner][_spender];
     }
+
     //Accelerator - Modified the correct technical term "mint" to a well know term "mine" for marketing purposes.
     function mine() canPoSMint public returns (bool) {
         if(balances[msg.sender] <= 0) return false;
@@ -249,15 +251,31 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
         myCoinAge = getCoinAge(who,now);
     }
 
+    // Year 1	300%	1,000,000
+    // Year 2	100%	2,000,000
+    // Year 3	100%	4,000,000
+    // Year 4	100%	8,000,000
+    // Year 5	50%	    12,000,000
+    // Year 6	50%	    18,000,000
+    // Year 7	50%	    27,000,000
     function annualInterest() public returns(uint interest) {
         uint _now = now;
+        //uint _now = 1527033600; // 16.5 - 23 May 2018
+        //uint _now = 1558569600; // 7.7 - 23 May 2019
+        //uint _now = 1590192000; // 7.7 - 23 May 2020
+        //uint _now = 1621728000; // 7.7 - 23 May 2021
+        //uint _now = 1653264000; // 4.35 - 23 May 2022
+        //uint _now = 1684800000; // 4.35 - 23 May 2023
+        //uint _now = 1716422400; // 4.35 - 23 May 2024
         interest = maxMintProofOfStake;
         //Accelerator - Modified initial interest rate to 300%
         if((_now.sub(stakeStartTime)).div(1 years) == 0) {
             interest = (1650 * maxMintProofOfStake).div(100);
-        } else if((_now.sub(stakeStartTime)).div(1 years) == 1) {
+        } else if((_now.sub(stakeStartTime).div(1 years) == 1) || (_now.sub(stakeStartTime).div(1 years) == 2) ||
+                    (_now.sub(stakeStartTime).div(1 years) == 3)){
             interest = (770 * maxMintProofOfStake).div(100);
-        } else if((_now.sub(stakeStartTime)).div(1 years) == 2){
+        } else if((_now.sub(stakeStartTime).div(1 years) == 4) || (_now.sub(stakeStartTime).div(1 years) == 5) ||
+                    (_now.sub(stakeStartTime).div(1 years) == 6)){
             interest = (435 * maxMintProofOfStake).div(100);
         }
     }
@@ -276,11 +294,13 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
         if((_now.sub(stakeStartTime)).div(1 years) == 0) {
             // 1st year effective annual interest rate is 300% when we select the stakeMaxAge (90 days) as the compounding period.
             interest = (1650 * maxMintProofOfStake).div(100);
-        } else if((_now.sub(stakeStartTime)).div(1 years) == 1) {
-            // 2nd year effective annual interest rate is 100% when we select the stakeMaxAge (90 days) as the compounding period.
+        } else if((_now.sub(stakeStartTime).div(1 years) == 1) || (_now.sub(stakeStartTime).div(1 years) == 2) ||
+                    (_now.sub(stakeStartTime).div(1 years) == 3)) {
+            // 2nd, 3nd, 4nd year effective annual interest rate is 100% when we select the stakeMaxAge (90 days) as the compounding period.
             interest = (770 * maxMintProofOfStake).div(100);
-        } else if((_now.sub(stakeStartTime)).div(1 years) == 2){
-            // 3nd year effective annual interest rate is 50%
+        } else if((_now.sub(stakeStartTime).div(1 years) == 4) || (_now.sub(stakeStartTime).div(1 years) == 5) ||
+                    (_now.sub(stakeStartTime).div(1 years) == 6)) {
+            // 5nd, 6nd, 7nd year effective annual interest rate is 50%
             interest = (435 * maxMintProofOfStake).div(100);
         }
 
@@ -300,6 +320,7 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
         }
     }
 
+    //function ownerSetStakeStartTime(uint timestamp) public {
     function ownerSetStakeStartTime(uint timestamp) public onlyOwner {
         require((stakeStartTime <= 0) && (timestamp >= chainStartTime));
         stakeStartTime = timestamp;
@@ -315,5 +336,4 @@ contract CoinVila is ERC20,PoSTokenStandard,Ownable {
         Transfer(this, owner, balance);
         owner.transfer(this.balance);
     }
-
 }
